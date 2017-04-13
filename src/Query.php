@@ -12,7 +12,6 @@
 namespace GraphAware\Neo4j\OGM;
 
 use GraphAware\Common\Result\Result;
-use GraphAware\Common\Type\Node;
 use GraphAware\Neo4j\OGM\Exception\Result\NonUniqueResultException;
 use GraphAware\Neo4j\OGM\Exception\Result\NoResultException;
 
@@ -52,6 +51,7 @@ class Query
 
     /**
      * @param $cql
+     * @return $this
      */
     public function setCQL($cql)
     {
@@ -76,6 +76,7 @@ class Query
     /**
      * @param string $alias
      * @param string $className
+     * @param string $hydrationType
      * @return $this
      */
     public function addEntityMapping($alias, $className, $hydrationType = self::HYDRATE_SINGLE)
