@@ -16,9 +16,11 @@ use GraphAware\Common\Result\Result;
 use GraphAware\Common\Type\Node;
 use GraphAware\Common\Type\Relationship;
 use GraphAware\Neo4j\OGM\Common\Collection;
+use GraphAware\Neo4j\OGM\Converters\Converter;
 use GraphAware\Neo4j\OGM\EntityManager;
 use GraphAware\Neo4j\OGM\Metadata\NodeEntityMetadata;
 use GraphAware\Neo4j\OGM\Metadata\RelationshipEntityMetadata;
+use GraphAware\Neo4j\OGM\Util\DirectionUtils;
 
 class EntityHydrator
 {
@@ -75,8 +77,14 @@ class EntityHydrator
 
         $mappedBy = $relationshipMetadata->getMappedByProperty();
         if ($mappedBy) {
-            $targetMeta->getRelationship($mappedBy)->setValue($o, $sourceEntity);
+            $targetRel = $targetMeta->getRelationship($mappedBy);
+            if ($targetRel->isCollection()) {
+                $targetRel->addToCollection($o, $sourceEntity);
+            } else {
+                $targetRel->setValue($o, $sourceEntity);
+            }
         }
+        $this->_em->getUnitOfWork()->addManagedRelationshipReference($sourceEntity, $o, $relationshipMetadata->getPropertyName(), $relationshipMetadata);
     }
 
     public function hydrateSimpleRelationshipCollection($alias, Result $dbResult, $sourceEntity)
@@ -96,9 +104,10 @@ class EntityHydrator
                 $mappedRel = $targetMeta->getRelationship($mappedBy);
                 if ($mappedRel->isCollection()) {
                     $mappedRel->initializeCollection($item);
-                    $mappedRel->getValue($item)->add($sourceEntity);
+                    $this->_em->getUnitOfWork()->addManagedRelationshipReference($sourceEntity, $item, $relationshipMetadata->getPropertyName(), $relationshipMetadata);
                 } else {
                     $mappedRel->setValue($item, $sourceEntity);
+                    $this->_em->getUnitOfWork()->addManagedRelationshipReference($sourceEntity, $item, $relationshipMetadata->getPropertyName(), $relationshipMetadata);
                 }
             }
         }
@@ -130,6 +139,12 @@ class EntityHydrator
             // hydrate the target node :
             $targetEntity = $otherHydrator->hydrateNode($targetNode);
 
+            $startNodePropertyName = $relationshipEntityMetadata->getStartNodePropertyName();
+            $sourceEntityMappedName = $relationshipMetadata->getMappedByProperty();
+
+            $startNodeIsSourceEntity = $startNodePropertyName === $sourceEntityMappedName;
+
+
             // create the relationship entity
             $entity = $this->_em->getUnitOfWork()->createRelationshipEntity(
                 $relationship,
@@ -140,20 +155,26 @@ class EntityHydrator
 
             // set properties on the relationship entity
             foreach ($relationshipEntityMetadata->getPropertiesMetadata() as $key => $propertyMetadata) {
-                if ($relationship->hasValue($key)) {
-                    $relationshipEntityMetadata->getPropertyMetadata($key)->setValue($entity, $relationship->get($key));
+
+                if ($propertyMetadata->hasConverter()) {
+                    $converter = Converter::getConverter($propertyMetadata->getConverterType(), $key);
+                    $value = $converter->toPHPValue($relationship->values(), $propertyMetadata->getConverterOptions());
+                    $propertyMetadata->setValue($entity, $value);
+                } else {
+                    $v = $relationship->hasValue($key) ? $relationship->get($key) : null;
+                    $propertyMetadata->setValue($entity, $v);
                 }
             }
 
             // set the start node
-            if ($relationshipEntityMetadata->getStartNodeClass() === $this->_classMetadata->getClassName()) {
+            if ($startNodeIsSourceEntity) {
                 $relationshipEntityMetadata->setStartNodeProperty($entity, $sourceEntity);
             } else {
                 $relationshipEntityMetadata->setStartNodeProperty($entity, $targetEntity);
             }
 
             // set the end node
-            if ($relationshipEntityMetadata->getEndNodeClass() === $this->_classMetadata->getClassName()) {
+            if (!$startNodeIsSourceEntity) {
                 $relationshipEntityMetadata->setEndNodeProperty($entity, $sourceEntity);
             } else {
                 $relationshipEntityMetadata->setEndNodeProperty($entity, $targetEntity);
@@ -181,7 +202,7 @@ class EntityHydrator
         }
     }
 
-    protected function hydrateRecord(Record $record, array &$result, $collection = false)
+    public function hydrateRecord(Record $record, array &$result, $collection = false)
     {
         $cqlAliasMap = $this->getAliases();
 
@@ -208,7 +229,7 @@ class EntityHydrator
         }
     }
 
-    protected function hydrateNode(Node $node, $class = null)
+    public function hydrateNode(Node $node, $class = null)
     {
         $cm = null === $class ? $this->_classMetadata->getClassName() : $class;
         $id = $node->identity();
@@ -239,10 +260,14 @@ class EntityHydrator
 
     protected function hydrateProperties($object, Node $node)
     {
-        foreach ($node->keys() as $key) {
-            if ($this->_classMetadata->hasField($key)) {
-                $propertyMeta = $this->_classMetadata->getPropertyMetadata($key);
-                $propertyMeta->setValue($object, $node->get($key));
+        foreach ($this->_classMetadata->getPropertiesMetadata() as $key => $metadata) {
+            if ($metadata->hasConverter()) {
+                $converter = Converter::getConverter($metadata->getConverterType(), $key);
+                $value = $converter->toPHPValue($node->values(), $metadata->getConverterOptions());
+                $metadata->setValue($object, $value);
+            } else {
+                $v = $node->hasValue($key) ? $node->get($key) : null;
+                $metadata->setValue($object, $v);
             }
         }
     }

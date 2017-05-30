@@ -28,7 +28,7 @@ class House
     protected $id;
 
     /**
-     * @OGM\Relationship(relationshipEntity="Acquisition", type="ACQUIRED", direction="INCOMING")
+     * @OGM\Relationship(relationshipEntity="Acquisition", type="ACQUIRED", direction="INCOMING", mappedBy="house")
      *
      * @var Acquisition
      */

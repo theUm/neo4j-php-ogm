@@ -35,7 +35,7 @@ class Hotel
     protected $name;
 
     /**
-     * @OGM\Relationship(relationshipEntity="Rating", type="RATED", direction="INCOMING")
+     * @OGM\Relationship(relationshipEntity="Rating", type="RATED", direction="INCOMING", mappedBy="hotel")
      *
      * @var Rating
      */

@@ -12,6 +12,7 @@
 namespace GraphAware\Neo4j\OGM\Metadata\Factory\Annotation;
 
 use Doctrine\Common\Annotations\Reader;
+use GraphAware\Neo4j\OGM\Annotations\Convert;
 use GraphAware\Neo4j\OGM\Annotations\EndNode;
 use GraphAware\Neo4j\OGM\Annotations\GraphId;
 use GraphAware\Neo4j\OGM\Annotations\Property;
@@ -66,8 +67,10 @@ final class RelationshipEntityMetadataFactory
                 continue;
             }
 
+            $converter = $this->reader->getPropertyAnnotation($reflectionProperty, Convert::class);
+
             if (null !== $propertyAnnotation = $this->reader->getPropertyAnnotation($reflectionProperty, Property::class)) {
-                $propertiesMetadata[] = new EntityPropertyMetadata($reflectionProperty->getName(), $reflectionProperty, $this->propertyAnnotationMetadataFactory->create($class, $reflectionProperty->getName()));
+                $propertiesMetadata[] = new EntityPropertyMetadata($reflectionProperty->getName(), $reflectionProperty, $this->propertyAnnotationMetadataFactory->create($class, $reflectionProperty->getName()), $converter);
             }
         }
 

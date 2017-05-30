@@ -75,7 +75,8 @@ class Car
      */
     public function getOwner()
     {
-        return $this->owner;
+        $owner =  $this->owner;
+        return $owner;
     }
 
     /**
@@ -100,5 +101,13 @@ class Car
     public function setModelNumber($modelNumber)
     {
         $this->modelNumber = $modelNumber;
+    }
+
+    /**
+     * @param string $owner
+     */
+    public function setOwner($owner)
+    {
+        $this->owner = $owner;
     }
 }

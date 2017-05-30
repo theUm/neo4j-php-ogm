@@ -11,10 +11,14 @@
 
 namespace GraphAware\Neo4j\OGM\Tests\Integration;
 
+use GraphAware\Neo4j\Client\Event\PreRunEvent;
+use GraphAware\Neo4j\Client\Neo4jClientEvents;
 use GraphAware\Neo4j\OGM\EntityManager;
 
 class IntegrationTestCase extends \PHPUnit_Framework_TestCase
 {
+    protected $calls = [];
+
     /**
      * @var \GraphAware\Neo4j\Client\Client
      */
@@ -29,6 +33,17 @@ class IntegrationTestCase extends \PHPUnit_Framework_TestCase
     {
         $this->createEntityManager();
         $this->client = $this->em->getDatabaseDriver();
+        $this->registerDatabaseDriverListener();
+
+    }
+
+    private function registerDatabaseDriverListener()
+    {
+        $this->em->getDatabaseDriver()->getEventDispatcher()->addListener(Neo4jClientEvents::NEO4J_PRE_RUN, function(PreRunEvent $event) {
+            foreach ($event->getStatements() as $statement) {
+                $this->calls[] = $statement;
+            }
+        });
     }
 
     public function clearDb()

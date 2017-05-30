@@ -42,7 +42,7 @@ class RelationshipPersister
         MERGE (a)'.$relStringPart.'(b)
         RETURN id(r)';
 
-        return Statement::create($query, ['ida' => $entityIdA, 'idb' => $entityIdB]);
+        return Statement::create($query, ['ida' => $entityIdA, 'idb' => $entityIdB], 'rel_create_'.$relationship->getPropertyName().$entityIdA.'_'.$entityIdB);
     }
 
     public function getDeleteRelationshipQuery($entityIdA, $entityIdB, RelationshipMetadata $relationship)

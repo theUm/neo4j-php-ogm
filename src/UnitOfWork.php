@@ -25,6 +25,7 @@ use GraphAware\Neo4j\OGM\Persister\EntityPersister;
 use GraphAware\Neo4j\OGM\Persister\FlushOperationProcessor;
 use GraphAware\Neo4j\OGM\Persister\RelationshipEntityPersister;
 use GraphAware\Neo4j\OGM\Persister\RelationshipPersister;
+use GraphAware\Neo4j\OGM\Proxy\LazyCollection;
 
 /**
  * @author Christophe Willemsen <christophe@graphaware.com>
@@ -63,6 +64,8 @@ class UnitOfWork
     private $nodesScheduledForUpdate = [];
 
     private $nodesScheduledForDelete = [];
+
+    private $nodesSchduledForDetachDelete = [];
 
     private $relationshipsScheduledForCreated = [];
 
@@ -154,6 +157,9 @@ class UnitOfWork
 
         foreach ($associations as $association) {
             $value = $association->getValue($entity);
+            if ($value instanceof LazyCollection) {
+                $value = $value->getAddWithoutFetch();
+            }
             if (is_array($value) || $value instanceof ArrayCollection || $value instanceof Collection) {
                 foreach ($value as $assoc) {
                     $this->persistRelationship($entity, $assoc, $association, $visited);
@@ -239,7 +245,7 @@ class UnitOfWork
                 $relationship[1],
                 $this->entityIds[spl_object_hash($relationship[2])]
             );
-            $relStack->push($statement->text(), $statement->parameters());
+            $relStack->push($statement->text(), $statement->parameters(), $statement->getTag());
         }
 
         if (count($this->relationshipsScheduledForDelete) > 0) {
@@ -248,6 +254,7 @@ class UnitOfWork
                 $relStack->push($statement->text(), $statement->parameters());
             }
         }
+
         $tx->runStack($relStack);
         $reStack = Stack::create('rel_entity_create');
         foreach ($this->relEntitiesScheduledForCreate as $oid => $info) {
@@ -298,7 +305,11 @@ class UnitOfWork
         $deleteNodeStack = Stack::create('delete_nodes');
         $possiblyDeleted = [];
         foreach ($this->nodesScheduledForDelete as $entity) {
-            $statement = $this->getPersister(get_class($entity))->getDeleteQuery($entity);
+            if (in_array(spl_object_hash($entity), $this->nodesSchduledForDetachDelete)) {
+                $statement = $this->getPersister(get_class($entity))->getDetachDeleteQuery($entity);
+            } else {
+                $statement = $this->getPersister(get_class($entity))->getDeleteQuery($entity);
+            }
             $deleteNodeStack->push($statement->text(), $statement->parameters());
             $possiblyDeleted[] = spl_object_hash($entity);
         }
@@ -329,6 +340,7 @@ class UnitOfWork
         $this->nodesScheduledForCreate
             = $this->nodesScheduledForUpdate
             = $this->nodesScheduledForDelete
+            = $this->nodesSchduledForDetachDelete
             = $this->relationshipsScheduledForCreated
             = $this->relationshipsScheduledForDelete
             = $this->relEntitesScheduledForUpdate
@@ -367,7 +379,6 @@ class UnitOfWork
         ];
         $this->addManaged($entityA);
         $this->addManaged($entityB);
-        //print_r($this->managedRelationshipReferences);
     }
 
     public function detectRelationshipEntityChanges()
@@ -415,10 +426,10 @@ class UnitOfWork
     {
         foreach ($this->managedRelationshipReferences as $oid => $reference) {
             $entity = $this->entitiesById[$this->entityIds[$oid]];
-            $reflO = $this->entityManager->getClassMetadataFor(get_class($entity));
             foreach ($reference as $field => $info) {
-                $property = $reflO->getRelationship($field);
-                $value = $property->getValue($entity);
+                /** @var RelationshipMetadata $relMeta */
+                $relMeta = $info[0]['rel'];
+                $value = $relMeta->getValue($entity);
                 if ($value instanceof ArrayCollection || $value instanceof AbstractLazyCollection) {
                     $value = $value->toArray();
                 }
@@ -437,6 +448,7 @@ class UnitOfWork
 
                     $added = array_udiff($value, $currentValue, $compare);
                     $removed = array_udiff($currentValue, $value, $compare);
+
                     foreach ($added as $add) {
                         // Since this is the same property, it should be ok to re-use the first relationship
                         $this->scheduleRelationshipReferenceForCreate($entity, $add, $info[0]['rel']);
@@ -458,6 +470,7 @@ class UnitOfWork
                 }
             }
         }
+
     }
 
     public function scheduleRelationshipReferenceForCreate($entity, $target, RelationshipMetadata $relationship)
@@ -551,10 +564,13 @@ class UnitOfWork
         return isset($this->entityIds[spl_object_hash($entity)]);
     }
 
-    public function scheduleDelete($entity)
+    public function scheduleDelete($entity, $detachRelationships = false)
     {
         if ($this->isNodeEntity($entity)) {
             $this->nodesScheduledForDelete[] = $entity;
+            if ($detachRelationships) {
+                $this->nodesSchduledForDetachDelete[] = spl_object_hash($entity);
+            }
 
             return;
         }

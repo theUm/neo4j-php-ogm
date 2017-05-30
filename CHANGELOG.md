@@ -1,6 +1,31 @@
-1.0.0-RC2 (not released yet)
+1.0.0-RC6 (not released yet)
 
+- Fixed a bug where findOneById was not checking class label in query ([#136](https://github.com/graphaware/neo4j-php-ogm/pull/136))
 
+1.0.0-RC5 (2017-04-15)
+
+- Added support for Map and Map Collections in `createQuery` result sets ([#131](https://github.com/graphaware/neo4j-php-ogm/pull/131))
+- Feature: `Property Converter` ([#128](https://github.com/graphaware/neo4j-php-ogm/pull/128))
+- Fixed issue when m..1 will have relationship references not managed. ([#127](https://github.com/graphaware/neo4j-php-ogm/pull/127))
+
+1.0.0-RC4 (2017-04-09)
+
+- Fixed incorrect hydration when RE is used between same model ([#124](https://github.com/graphaware/neo4j-php-ogm/pull/124))
+  (BC : The `mappedBy` is now mandatory when using RE)
+- Improvements on `EntityManager::createQuery` supporting scalar results and hydration of more than one entity types ([#125](https://github.com/graphaware/neo4j-php-ogm/pull/125))
+
+1.0.0-RC3 (2017-04-01)
+
+- Added a possibility to detach delete node entities via EntityManager::remove ([#111](https://github.com/graphaware/neo4j-php-ogm/pull/111))
+- Fixed an issue where a simple relationship would not be managed by the uow ([#112](https://github.com/graphaware/neo4j-php-ogm/pull/112))
+- Fix issue [#102](https://github.com/graphaware/neo4j-php-ogm/issues/102) Unserialize error - ([#115](https://github.com/graphaware/neo4j-php-ogm/pull/115))
+- Implemented Lazy Collection for smart relationships collection lazy loading ([#116](https://github.com/graphaware/neo4j-php-ogm/pull/116))
+
+1.0.0-RC2 (2017-03-25)
+
+- Fixed a regression where entities in a hydrated collection were re-added when loading the inverse side ([#108](https://github.com/graphaware/neo4j-php-ogm/pull/108))
+- Fixed a case where the hydrator could replace a collection by a single entity during the inversed hydration ([#109](https://github.com/graphaware/neo4j-php-ogm/pull/109))
+- Added first implementation of `EntityManager::createQuery` for user-defined Cypher queries mapped to PHP entities [[#110](https://github.com/graphaware/neo4j-php-ogm/pull/110)]
 
 1.0.0-RC1 (2017-02-27)
 

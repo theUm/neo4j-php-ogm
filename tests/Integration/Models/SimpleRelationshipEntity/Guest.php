@@ -35,7 +35,7 @@ class Guest
     protected $name;
 
     /**
-     * @OGM\Relationship(relationshipEntity="Rating", type="RATED", direction="OUTGOING")
+     * @OGM\Relationship(relationshipEntity="Rating", type="RATED", direction="OUTGOING", mappedBy="guest")
      *
      * @var Rating
      */

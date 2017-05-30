@@ -9,6 +9,7 @@
  * file that was distributed with this source code.
  */
 
+require_once __DIR__.'/../Annotations/Convert.php';
 require_once __DIR__.'/../Annotations/EndNode.php';
 require_once __DIR__.'/../Annotations/Fetch.php';
 require_once __DIR__.'/../Annotations/GraphId.php';

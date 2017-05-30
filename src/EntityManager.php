@@ -16,6 +16,7 @@ use Doctrine\Common\Annotations\FileCacheReader;
 use Doctrine\Common\EventManager;
 use GraphAware\Neo4j\Client\ClientBuilder;
 use GraphAware\Neo4j\Client\ClientInterface;
+use GraphAware\Neo4j\OGM\Converters\Converter;
 use GraphAware\Neo4j\OGM\Exception\MappingException;
 use GraphAware\Neo4j\OGM\Hydrator\EntityHydrator;
 use GraphAware\Neo4j\OGM\Metadata\Factory\Annotation\AnnotationGraphEntityMetadataFactory;
@@ -132,9 +133,9 @@ class EntityManager implements EntityManagerInterface
     /**
      * {@inheritdoc}
      */
-    public function remove($object)
+    public function remove($object, $detachRelationships = false)
     {
-        $this->uow->scheduleDelete($object);
+        $this->uow->scheduleDelete($object, $detachRelationships);
     }
 
     /**
@@ -363,5 +364,25 @@ class EntityManager implements EntityManagerInterface
     public function getEntityPersister($className)
     {
         return new BasicEntityPersister($className, $this->getClassMetadataFor($className), $this);
+    }
+
+    /**
+     * @param string $cql
+     * @return Query
+     */
+    public function createQuery($cql = '')
+    {
+        $query = new Query($this);
+
+        if (!empty($cql)) {
+            $query->setCQL($cql);
+        }
+
+        return $query;
+    }
+
+    public function registerPropertyConverter($name, $classname)
+    {
+        Converter::addConverter($name, $classname);
     }
 }

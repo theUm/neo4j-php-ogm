@@ -131,6 +131,9 @@ class EntityWithSimpleRelationshipCollectionTest extends IntegrationTestCase
         $this->assertSame(1, $result->size());
     }
 
+    /**
+     * @group lazy
+     */
     public function testFloorLevelCanBeChangedWithClear()
     {
         $building = new Building();
@@ -143,7 +146,7 @@ class EntityWithSimpleRelationshipCollectionTest extends IntegrationTestCase
         $entities = $this->em->getRepository(Building::class)->findAll();
         /** @var Building $building */
         $building = $entities[0];
-        $floor1 = $building->getFloors()[0];
+        $floor1 = $building->getFloors()->get(0);
         $floor1->setLevel(5);
         $floor2 = new Floor(2);
         $building->getFloors()->add($floor2);

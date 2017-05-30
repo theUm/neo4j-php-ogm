@@ -11,6 +11,7 @@
 
 namespace GraphAware\Neo4j\OGM\Tests\Integration;
 
+use GraphAware\Neo4j\OGM\Proxy\LazyCollection;
 use GraphAware\Neo4j\OGM\Tests\Integration\Models\OneToManyRE\Acquisition;
 use GraphAware\Neo4j\OGM\Tests\Integration\Models\OneToManyRE\House;
 use GraphAware\Neo4j\OGM\Tests\Integration\Models\OneToManyRE\Owner;
@@ -64,6 +65,9 @@ class OneToManyRelationshipEntityTest extends IntegrationTestCase
         $this->assertGraphExist('(o:Owner {name:"M"})-[r:ACQUIRED {year: 2008}]->(h:House {address: "B Street 2"})');
     }
 
+    /**
+     * @group breaking
+     */
     public function testOwnerCanBeLoadedWithMultipleAcquisitions()
     {
         $owner = new Owner('M');
@@ -173,6 +177,7 @@ class OneToManyRelationshipEntityTest extends IntegrationTestCase
         /** @var House $house */
         $house = $this->em->getRepository(House::class)->findOneBy(['address' => 'A Street 1']);
         $a = new Acquisition($me, $house, 1980);
+        $this->assertInstanceOf(LazyCollection::class, $me->getAcquisitions());
         $me->getAcquisitions()->add($a);
         $this->em->flush();
         $this->assertGraphExist('(o:Owner {name:"M"})-[r:ACQUIRED {year: 1980}]->(h:House {address: "A Street 1"})');

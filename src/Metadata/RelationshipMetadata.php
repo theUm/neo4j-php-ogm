@@ -11,11 +11,13 @@
 
 namespace GraphAware\Neo4j\OGM\Metadata;
 
+use Doctrine\Common\Collections\AbstractLazyCollection;
 use Doctrine\Common\Collections\ArrayCollection;
 use GraphAware\Neo4j\OGM\Annotations\OrderBy;
 use GraphAware\Neo4j\OGM\Annotations\Relationship;
 use GraphAware\Neo4j\OGM\Common\Collection;
 use GraphAware\Neo4j\OGM\Exception\MappingException;
+use GraphAware\Neo4j\OGM\Proxy\LazyCollection;
 use GraphAware\Neo4j\OGM\Util\ClassUtils;
 
 final class RelationshipMetadata
@@ -186,7 +188,7 @@ final class RelationshipMetadata
     /**
      * @return string
      */
-    public function getOrderByPropery()
+    public function getOrderByProperty()
     {
         return $this->orderBy->property;
     }
@@ -212,7 +214,7 @@ final class RelationshipMetadata
 
             return;
         }
-        if ($this->getValue($object) instanceof ArrayCollection) {
+        if ($this->getValue($object) instanceof ArrayCollection || $this->getValue($object) instanceof AbstractLazyCollection) {
             return;
         }
         $this->setValue($object, new Collection());
@@ -230,6 +232,15 @@ final class RelationshipMetadata
 
         /** @var Collection $coll */
         $coll = $this->getValue($object);
+
+        if ($coll instanceof LazyCollection) {
+            return $coll->add($value, false);
+        }
+
+        if (null === $coll) {
+            $coll = new Collection();
+            $this->setValue($object, $coll);
+        }
         $toAdd = true;
         $oid2 = spl_object_hash($value);
         foreach ($coll->toArray() as $el) {

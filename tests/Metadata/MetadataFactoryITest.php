@@ -50,7 +50,7 @@ class MetadataFactoryITest extends \PHPUnit_Framework_TestCase
         $entityMetadata = $this->entityMetadataFactory->create(Person::class);
         $this->assertInstanceOf(GraphEntityMetadata::class, $entityMetadata);
         $this->assertInstanceOf(NodeEntityMetadata::class, $entityMetadata);
-        $this->assertCount(2, $entityMetadata->getPropertiesMetadata());
+        $this->assertCount(3, $entityMetadata->getPropertiesMetadata());
         $this->assertInstanceOf(EntityPropertyMetadata::class, $entityMetadata->getPropertyMetadata('name'));
     }
 

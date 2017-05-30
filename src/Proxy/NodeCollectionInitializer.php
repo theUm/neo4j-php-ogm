@@ -12,6 +12,7 @@
 namespace GraphAware\Neo4j\OGM\Proxy;
 
 use GraphAware\Common\Type\Node;
+use GraphAware\Neo4j\OGM\Metadata\RelationshipMetadata;
 
 class NodeCollectionInitializer extends SingleNodeInitializer
 {
@@ -19,5 +20,12 @@ class NodeCollectionInitializer extends SingleNodeInitializer
     {
         $persister = $this->em->getEntityPersister($this->metadata->getClassName());
         $persister->getSimpleRelationshipCollection($this->relationshipMetadata->getPropertyName(), $baseInstance);
+    }
+
+    public function getCount($baseInstance, RelationshipMetadata $relationshipMetadata)
+    {
+        $persister = $this->em->getEntityPersister($this->metadata->getClassName());
+
+        return $persister->getCountForRelationship($relationshipMetadata->getPropertyName(), $baseInstance);
     }
 }

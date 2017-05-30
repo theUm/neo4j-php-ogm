@@ -38,26 +38,44 @@ class ProxyFactory
         $initializers = [];
         foreach ($this->classMetadata->getSimpleRelationships() as $relationship) {
             if (!in_array($relationship->getPropertyName(), $mappedByProperties, true)) {
-                $initializer = $this->getInitializerFor($relationship);
-                $initializers[$relationship->getPropertyName()] = $initializer;
+                if (!$relationship->isCollection()) {
+                    $initializer = $this->getInitializerFor($relationship);
+                    $initializers[$relationship->getPropertyName()] = $initializer;
+                } else {
+                    $mappedByProperties[] = $relationship->getPropertyName();
+                }
             }
         }
+
         foreach ($this->classMetadata->getRelationshipEntities() as $relationshipEntity) {
             if (!$relationshipEntity->isCollection()) {
                 if (!in_array($relationshipEntity->getPropertyName(), $mappedByProperties, true)) {
                     $initializer = new RelationshipEntityInitializer($this->em, $relationshipEntity, $this->classMetadata);
                     $initializers[$relationshipEntity->getPropertyName()] = $initializer;
+
                 }
             } else {
                 if (!in_array($relationshipEntity->getPropertyName(), $mappedByProperties, true)) {
-                    $initializer = new RelationshipEntityCollectionInitializer($this->em, $relationshipEntity, $this->classMetadata);
-                    $initializers[$relationshipEntity->getPropertyName()] = $initializer;
+//                    $initializer = new RelationshipEntityCollectionInitializer($this->em, $relationshipEntity, $this->classMetadata);
+//                    $initializers[$relationshipEntity->getPropertyName()] = $initializer;
+
+                    $mappedByProperties[] = $relationshipEntity->getPropertyName();
                 }
             }
         }
         $object->__setInitializers($initializers);
         foreach ($mappedByProperties as $mappedByProperty) {
             $object->__setInitialized($mappedByProperty);
+        }
+
+        foreach ($this->classMetadata->getRelationships() as $relationship) {
+            if ($relationship->isCollection()) {
+                $initializer = $relationship->isRelationshipEntity()
+                    ? new RelationshipEntityCollectionInitializer($this->em, $relationship, $this->classMetadata)
+                    : $this->getInitializerFor($relationship);
+                $lc = new LazyCollection($initializer, $node, $object, $relationship);
+                $relationship->setValue($object, $lc);
+            }
         }
 
         return $object;
@@ -177,7 +195,14 @@ METHOD;
         static $prototypes = [];
 
         if (!array_key_exists($proxyClass, $prototypes)) {
-            $prototypes[$proxyClass] = unserialize(sprintf('O:%d:"%s":0:{}', strlen($proxyClass), $proxyClass));
+            $rc = @unserialize(sprintf('C:%d:"%s":0:{}', strlen($proxyClass), $proxyClass));
+
+            if (false === $rc) {
+                $rc = new \ReflectionClass($proxyClass);
+                return $rc->newInstanceWithoutConstructor();
+            }
+
+            $prototypes[$proxyClass] = $rc;
         }
 
         return clone $prototypes[$proxyClass];

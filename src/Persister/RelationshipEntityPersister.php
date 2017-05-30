@@ -12,6 +12,7 @@
 namespace GraphAware\Neo4j\OGM\Persister;
 
 use GraphAware\Common\Cypher\Statement;
+use GraphAware\Neo4j\OGM\Converters\Converter;
 use GraphAware\Neo4j\OGM\EntityManager;
 use GraphAware\Neo4j\OGM\Metadata\RelationshipEntityMetadata;
 use GraphAware\Neo4j\OGM\Util\ClassUtils;
@@ -54,6 +55,18 @@ class RelationshipEntityPersister
             $v = $propertyMetadata->getValue($entity);
             $parameters['fields'][$propertyMetadata->getPropertyName()] = $v;
         }
+
+        foreach ($this->classMetadata->getPropertiesMetadata() as $field => $meta) {
+            $fieldId = $this->classMetadata->getClassName().$field;
+            if ($meta->hasConverter()) {
+                $converter = Converter::getConverter($meta->getConverterType(), $fieldId);
+                $v = $converter->toDatabaseValue($meta->getValue($entity), $meta->getConverterOptions());
+                $parameters['fields'][$field] = $v;
+            } else {
+                $parameters['fields'][$field] = $meta->getValue($entity);
+            }
+        }
+
         $query = 'MATCH (a), (b) WHERE id(a) = {a} AND id(b) = {b}'.PHP_EOL;
         $query .= sprintf('CREATE (a)-[r:%s]->(b)', $relType).PHP_EOL;
         if (!empty($parameters['fields'])) {
@@ -75,9 +88,15 @@ class RelationshipEntityPersister
             'fields' => [],
         ];
 
-        foreach ($this->classMetadata->getPropertiesMetadata() as $propertyMetadata) {
-            $v = $propertyMetadata->getValue($entity);
-            $parameters['fields'][$propertyMetadata->getPropertyName()] = $v;
+        foreach ($this->classMetadata->getPropertiesMetadata() as $field => $meta) {
+            $fieldId = $this->classMetadata->getClassName().$field;
+            if ($meta->hasConverter()) {
+                $converter = Converter::getConverter($meta->getConverterType(), $fieldId);
+                $v = $converter->toDatabaseValue($meta->getValue($entity), $meta->getConverterOptions());
+                $parameters['fields'][$field] = $v;
+            } else {
+                $parameters['fields'][$field] = $meta->getValue($entity);
+            }
         }
 
         return Statement::create($query, $parameters);

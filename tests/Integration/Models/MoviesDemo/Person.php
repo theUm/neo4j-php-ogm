@@ -47,7 +47,7 @@ class Person
      *
      * @var Movie[]|Collection
      */
-    protected $movies;
+    public $movies;
 
     public function __construct($name, $born = null)
     {
@@ -86,6 +86,11 @@ class Person
     public function getMovies()
     {
         return $this->movies;
+    }
+
+    public function removeMovie(Movie $movie)
+    {
+        return $this->movies->removeElement($movie);
     }
 
     /**

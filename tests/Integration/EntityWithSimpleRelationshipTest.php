@@ -144,4 +144,38 @@ class EntityWithSimpleRelationshipTest extends IntegrationTestCase
         $this->assertSame('vroom-123', $mike->getCar()->getModelNumber()->getNumber());
         $this->assertSame(spl_object_hash($mike), spl_object_hash($mike->getCar()->getModelNumber()->getCarReference()->getOwner()));
     }
+
+    /**
+     * @group issue-108
+     * @group issue-108-2
+     */
+    public function testRemoveRelationshipIsPersisted()
+    {
+        $person = new Person('Mike');
+        $car = new Car('Bugatti', $person);
+        $person->setCar($car);
+        $this->em->persist($person);
+        $this->em->flush();
+
+        $result = $this->client->run('MATCH (n:Person {name:"Mike"})-[:OWNS]->(c:Car {model:"Bugatti"}) RETURN n, c');
+        $this->assertSame(1, $result->size());
+        //exit;
+
+        $this->em->clear();
+
+        /** @var Car $bugatti */
+        $bugatti = $this->em->getRepository(Car::class)->findOneBy(array('model' => 'Bugatti'));
+        //echo "\n|" . print_r($bugatti->getModel(),1 ) . "|\n";
+        /** @var Person $mike */
+        $mike = $this->em->getRepository(Person::class)->findOneBy(array('name' => 'Mike'));
+        //echo "\n|" . print_r($mike->getName(),1 ) . "|\n";
+        $this->assertEquals(spl_object_hash($bugatti->getOwner()), spl_object_hash($mike));
+
+        $mike->setCar(null);
+        $bugatti->setOwner(null);
+        $this->em->flush();
+
+        $result = $this->client->run('MATCH (n:Person {name:"Mike"})-[:OWNS]->(c:Car {model:"Bugatti"}) RETURN n, c');
+        $this->assertSame(0, $result->size());
+    }
 }

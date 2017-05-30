@@ -13,6 +13,7 @@ namespace GraphAware\Neo4j\OGM\Tests\Metadata\Factory;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Persistence\Mapping\Driver\SymfonyFileLocator;
+use GraphAware\Neo4j\OGM\Metadata\EntityPropertyMetadata;
 use GraphAware\Neo4j\OGM\Metadata\Factory\Annotation\AnnotationGraphEntityMetadataFactory;
 use GraphAware\Neo4j\OGM\Metadata\Factory\Xml\IdXmlMetadataFactory;
 use GraphAware\Neo4j\OGM\Metadata\Factory\Xml\NodeEntityMetadataFactory;
@@ -73,6 +74,20 @@ class GraphEntityMetadataFactoryTest extends \PHPUnit_Framework_TestCase
         $this->assertPersonMetadata($this->xmlMetadataFactory->create(Person::class));
     }
 
+    /**
+     * @group property-convert
+     */
+    public function testPropertyConvertMetadata()
+    {
+        $personMetadata = $this->annotationMetadataFactory->create(Person::class);
+        /** @var EntityPropertyMetadata $createdMetadata */
+        $createdMetadata = $personMetadata->getPropertyMetadata('created');
+        $this->assertTrue($createdMetadata->hasConverter());
+        $this->assertEquals('datetime', $createdMetadata->getConverterType());
+        $this->assertInternalType('array', $createdMetadata->getConverterOptions());
+        $this->assertArrayHasKey('db_format', $createdMetadata->getConverterOptions());
+    }
+
     public function testRatingMetadata()
     {
         $this->assertRatingMetadata($this->annotationMetadataFactory->create(Rating::class));
@@ -128,7 +143,6 @@ class GraphEntityMetadataFactoryTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('id', $metadata->getIdentifier());
 
         $properties = $metadata->getPropertiesMetadata();
-        $this->assertCount(2, $properties);
 
         $nameProperty = $metadata->getPropertyMetadata('name');
         $this->assertSame('string', $nameProperty->getPropertyAnnotationMetadata()->getType());
@@ -151,9 +165,6 @@ class GraphEntityMetadataFactoryTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(Movie::class, $moviesRelation->getTargetEntity());
         $this->assertSame(true, $moviesRelation->isCollection());
         $this->assertSame('actors', $moviesRelation->getMappedByProperty());
-        $this->assertSame(true, $moviesRelation->isLazy());
-        $this->assertSame('name', $moviesRelation->getOrderByPropery());
-        $this->assertSame('DESC', $moviesRelation->getOrder());
     }
 
     /**

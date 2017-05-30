@@ -15,14 +15,14 @@ This getting started guide is based on the Neo4j movies example you can load by 
 Require the OGM via composer :
 
 ```bash
-composer require graphaware/neo4j-php-ogm:^1.0@beta
+composer require graphaware/neo4j-php-ogm:@rc
 ```
 
 ### Domain identification
 
 Let's take a look at the movie graph and define what our domain objects will look like :
 
-![Domain](_01-domain.png)
+![Domain](_assets/_01-domain.png)
 
 We can identify the following entities :
 
@@ -194,7 +194,7 @@ $manager->flush();
 
 And verify our database :
 
-![New entity persisted](_02-newactor.png)
+![New entity persisted](_assets/_02-newactor.png)
 
 The entity remains to be managed by the Entity EntityManager, this means that any update to your object will be reflected on next flush.
 This is also the case when you load entities from the database, they become automtically managed, let's modify Tom Hank's year of birth :
@@ -216,7 +216,7 @@ $tomHanks->setBorn(1990);
 $manager->flush();
 ```
 
-![Update entity](_03-updatenode.png)
+![Update entity](_assets/_03-updatenode.png)
 
 He is quite younger now :)
 
@@ -541,7 +541,7 @@ $manager->flush();
 
 And verify our database :
 
-![update_related](_04-updaterelated.png)
+![update_related](_assets/_04-updaterelated.png)
 
 All good !
 
@@ -750,7 +750,7 @@ $manager->flush();
 
 And check our graph :
 
-![rel-entity](_05-re.png)
+![rel-entity](_assets/_05-re.png)
 
 
 ### Ordering related entities

@@ -36,7 +36,7 @@ class Owner
     protected $name;
 
     /**
-     * @OGM\Relationship(relationshipEntity="Acquisition", type="ACQUIRED", direction="OUTGOING", collection=true)
+     * @OGM\Relationship(relationshipEntity="Acquisition", type="ACQUIRED", direction="OUTGOING", collection=true, mappedBy="owner")
      *
      * @var Acquisition[]|Collection
      */

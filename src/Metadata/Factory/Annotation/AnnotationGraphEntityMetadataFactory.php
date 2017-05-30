@@ -12,6 +12,7 @@
 namespace GraphAware\Neo4j\OGM\Metadata\Factory\Annotation;
 
 use Doctrine\Common\Annotations\Reader;
+use GraphAware\Neo4j\OGM\Annotations\Convert;
 use GraphAware\Neo4j\OGM\Annotations\Fetch;
 use GraphAware\Neo4j\OGM\Annotations\Label;
 use GraphAware\Neo4j\OGM\Annotations\Lazy;
@@ -81,8 +82,9 @@ class AnnotationGraphEntityMetadataFactory implements GraphEntityMetadataFactory
             $annotationMetadata = $this->nodeAnnotationMetadataFactory->create($className);
             foreach ($reflectionClass->getProperties() as $reflectionProperty) {
                 $propertyAnnotationMetadata = $this->propertyAnnotationMetadataFactory->create($className, $reflectionProperty->getName());
+                $converter = $this->reader->getPropertyAnnotation($reflectionProperty, Convert::class);
                 if (null !== $propertyAnnotationMetadata) {
-                    $propertiesMetadata[] = new EntityPropertyMetadata($reflectionProperty->getName(), $reflectionProperty, $propertyAnnotationMetadata);
+                    $propertiesMetadata[] = new EntityPropertyMetadata($reflectionProperty->getName(), $reflectionProperty, $propertyAnnotationMetadata, $converter);
                 } else {
                     $idA = $this->IdAnnotationMetadataFactory->create($className, $reflectionProperty);
                     if (null !== $idA) {

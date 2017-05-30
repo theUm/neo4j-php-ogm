@@ -14,6 +14,7 @@ namespace GraphAware\Neo4j\OGM\Persisters;
 use GraphAware\Common\Cypher\Statement;
 use GraphAware\Neo4j\OGM\EntityManager;
 use GraphAware\Neo4j\OGM\Metadata\NodeEntityMetadata;
+use GraphAware\Neo4j\OGM\Metadata\RelationshipMetadata;
 use GraphAware\Neo4j\OGM\Util\DirectionUtils;
 
 class BasicEntityPersister
@@ -122,6 +123,14 @@ class BasicEntityPersister
         $hydrator = $this->_em->getEntityHydrator($this->_className);
 
         $hydrator->hydrateRelationshipEntity($alias, $result, $sourceEntity);
+    }
+
+    public function getCountForRelationship($alias, $sourceEntity)
+    {
+        $stmt = $this->getDegreeStatement($alias, $sourceEntity);
+        $result = $this->_em->getDatabaseDriver()->run($stmt->text(), $stmt->parameters());
+
+        return $result->firstRecord()->get($alias);
     }
 
     /**
@@ -238,7 +247,7 @@ class BasicEntityPersister
         $cypher .= 'RETURN '.$targetAlias.' AS '.$targetAlias.' ';
 
         if ($relationshipMeta->hasOrderBy()) {
-            $cypher .= 'ORDER BY '.$targetAlias.'.'.$relationshipMeta->getOrderByPropery().' '.$relationshipMeta->getOrder();
+            $cypher .= 'ORDER BY '.$targetAlias.'.'.$relationshipMeta->getOrderByProperty().' '.$relationshipMeta->getOrder();
         }
 
         $params = ['id' => $sourceEntityId];
@@ -249,9 +258,30 @@ class BasicEntityPersister
     private function getMatchOneByIdCypher($id)
     {
         $identifier = $this->_classMetadata->getEntityAlias();
-        $cypher = 'MATCH ('.$identifier.') WHERE id('.$identifier.') = {id} RETURN '.$identifier;
+        $label = $this->_classMetadata->getLabel();
+        $cypher = 'MATCH ('.$identifier.':`'.$label.'`) WHERE id('.$identifier.') = {id} RETURN '.$identifier;
         $params = ['id' => (int) $id];
 
         return Statement::create($cypher, $params);
+    }
+
+    private function getDegreeStatement($alias, $sourceEntity)
+    {
+        $relationshipMeta = $this->_classMetadata->getRelationship($alias);
+        $relAlias = $relationshipMeta->getAlias();
+        $sourceEntityId = $this->_classMetadata->getIdValue($sourceEntity);
+        $relationshipType = $relationshipMeta->getType();
+
+        $isIncoming = $relationshipMeta->getDirection() === DirectionUtils::INCOMING ? '<' : '';
+        $isOutgoing = $relationshipMeta->getDirection() === DirectionUtils::OUTGOING ? '>' : '';
+
+        $relPattern = sprintf('%s-[:`%s`]-%s', $isIncoming, $relationshipType, $isOutgoing);
+
+        $cypher  = 'MATCH (n) WHERE id(n) = {id} ';
+        $cypher .= 'RETURN size((n)'.$relPattern.'()) ';
+        $cypher .= 'AS '.$alias;
+
+        return Statement::create($cypher, ['id' => $sourceEntityId]);
+
     }
 }

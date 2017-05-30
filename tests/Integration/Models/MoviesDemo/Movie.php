@@ -17,7 +17,7 @@ use GraphAware\Neo4j\OGM\Common\Collection;
 /**
  * Class Movie.
  *
- * @OGM\Node(label="Movie")
+ * @OGM\Node(label="Movie", repository="GraphAware\Neo4j\OGM\Tests\Integration\Repository\MoviesCustomRepository")
  */
 class Movie
 {
@@ -54,7 +54,7 @@ class Movie
      *
      * @var Collection|Person[]
      */
-    protected $actors;
+    public $actors;
 
     public function __construct($title)
     {

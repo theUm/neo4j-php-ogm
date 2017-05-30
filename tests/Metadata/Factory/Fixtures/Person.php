@@ -49,6 +49,12 @@ class Person
     private $movies;
 
     /**
+     * @OGM\Property()
+     * @OGM\Convert(type="datetime", options={"db_format"="long", "timezone"="UTC"})
+     */
+    private $created;
+
+    /**
      * @return string
      */
     public function getName()

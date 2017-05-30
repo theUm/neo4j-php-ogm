@@ -14,6 +14,7 @@ namespace GraphAware\Neo4j\OGM\Persister;
 use GraphAware\Neo4j\Client\Stack;
 use GraphAware\Neo4j\OGM\EntityManager;
 use GraphAware\Neo4j\OGM\Metadata\LabeledPropertyMetadata;
+use GraphAware\Neo4j\OGM\Converters\Converter;
 
 class FlushOperationProcessor
 {
@@ -58,8 +59,21 @@ class FlushOperationProcessor
 
                 $query .= ' RETURN id(n) as id, node.oid as oid';
                 $statements[$lblKey]['query'] = $query;
+
+                $propertyValues = [];
+                foreach ($metadata->getPropertiesMetadata() as $field => $meta) {
+                    $fieldId = $metadata->getClassName().$field;
+                    if ($meta->hasConverter()) {
+                        $converter = Converter::getConverter($meta->getConverterType(), $fieldId);
+                        $v = $converter->toDatabaseValue($meta->getValue($entity), $meta->getConverterOptions());
+                        $propertyValues[$field] = $v;
+                    } else {
+                        $propertyValues[$field] = $meta->getValue($entity);
+                    }
+                }
+
                 $statements[$lblKey]['nodes'][] = [
-                    'props' => $metadata->getPropertyValuesArray($entity),
+                    'props' => $propertyValues,
                     'oid' => $oid,
                 ];
             }

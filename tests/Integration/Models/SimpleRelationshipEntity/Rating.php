@@ -49,6 +49,14 @@ class Rating
     protected $score;
 
     /**
+     * @var \DateTime
+     *
+     * @OGM\Property()
+     * @OGM\Convert(type="datetime", options={"format":"long_timestamp"})
+     */
+    protected $created;
+
+    /**
      * @param Guest $guest
      * @param Hotel $hotel
      * @param float $score
@@ -58,6 +66,7 @@ class Rating
         $this->guest = $guest;
         $this->hotel = $hotel;
         $this->score = $score;
+        $this->created = new \DateTime("NOW");
     }
 
     /**
@@ -114,5 +123,21 @@ class Rating
     public function setScore($score)
     {
         $this->score = $score;
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getCreated()
+    {
+        return $this->created;
+    }
+
+    /**
+     * @param \DateTime $created
+     */
+    public function setCreated($created)
+    {
+        $this->created = $created;
     }
 }

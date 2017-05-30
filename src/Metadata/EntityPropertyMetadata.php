@@ -11,6 +11,8 @@
 
 namespace GraphAware\Neo4j\OGM\Metadata;
 
+use GraphAware\Neo4j\OGM\Annotations\Convert;
+
 class EntityPropertyMetadata
 {
     /**
@@ -33,18 +35,22 @@ class EntityPropertyMetadata
      */
     private $isAccessible;
 
+    private $converter;
+
     /**
      *
      * @param string                     $propertyName
      * @param \ReflectionProperty        $reflectionProperty
      * @param PropertyAnnotationMetadata $propertyAnnotationMetadata
+     * @param Convert                    $converter
      */
-    public function __construct($propertyName, \ReflectionProperty $reflectionProperty, PropertyAnnotationMetadata $propertyAnnotationMetadata)
+    public function __construct($propertyName, \ReflectionProperty $reflectionProperty, PropertyAnnotationMetadata $propertyAnnotationMetadata, Convert $converter = null)
     {
         $this->propertyName = $propertyName;
         $this->reflectionProperty = $reflectionProperty;
         $this->propertyAnnotationMetadata = $propertyAnnotationMetadata;
         $this->isAccessible = $reflectionProperty->isPublic();
+        $this->converter = $converter;
     }
 
     /**
@@ -91,6 +97,30 @@ class EntityPropertyMetadata
         $this->checkAccess();
 
         return $this->reflectionProperty->getValue($object);
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasConverter()
+    {
+        return null !== $this->converter;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getConverterType()
+    {
+        return $this->converter->type;
+    }
+
+    /**
+     * @return array
+     */
+    public function getConverterOptions()
+    {
+        return $this->converter->options;
     }
 
     private function checkAccess()
