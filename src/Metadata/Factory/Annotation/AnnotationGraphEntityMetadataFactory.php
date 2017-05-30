@@ -83,6 +83,9 @@ class AnnotationGraphEntityMetadataFactory implements GraphEntityMetadataFactory
             foreach ($reflectionClass->getProperties() as $reflectionProperty) {
                 $propertyAnnotationMetadata = $this->propertyAnnotationMetadataFactory->create($className, $reflectionProperty->getName());
                 $converter = $this->reader->getPropertyAnnotation($reflectionProperty, Convert::class);
+                if (null !== $converter && null == $converter->options){
+                    $converter->options = [];
+                }
                 if (null !== $propertyAnnotationMetadata) {
                     $propertiesMetadata[] = new EntityPropertyMetadata($reflectionProperty->getName(), $reflectionProperty, $propertyAnnotationMetadata, $converter);
                 } else {
