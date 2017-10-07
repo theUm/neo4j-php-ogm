@@ -116,6 +116,14 @@ final class RelationshipMetadata
     /**
      * @return bool
      */
+    public function isTargetEntity()
+    {
+        return null !== $this->relationshipAnnotation->targetEntity;
+    }
+
+    /**
+     * @return bool
+     */
     public function isCollection()
     {
         return true === $this->relationshipAnnotation->collection;

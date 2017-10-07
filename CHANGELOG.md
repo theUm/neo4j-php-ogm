@@ -1,6 +1,7 @@
-1.0.0-RC6 (not released yet)
+1.0.0-RC6 (2017-07-13)
 
 - Fixed a bug where findOneById was not checking class label in query ([#136](https://github.com/graphaware/neo4j-php-ogm/pull/136))
+- Fixed the ability to query relationships on 2 different entities with same relationship type ([#144](https://github.com/graphaware/neo4j-php-ogm/pull/144))
 
 1.0.0-RC5 (2017-04-15)
 

@@ -19,7 +19,7 @@ use GraphAware\Neo4j\OGM\Common\Collection;
  *
  * @OGM\Node(label="TestUser")
  */
-class TestUser
+class TestUser implements \JsonSerializable
 {
     /**
      * @OGM\GraphId()
@@ -117,4 +117,14 @@ class TestUser
     {
         $this->sponsoredBy = $sponsoredBy;
     }
+
+    public function jsonSerialize()
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name
+        ];
+    }
+
+
 }

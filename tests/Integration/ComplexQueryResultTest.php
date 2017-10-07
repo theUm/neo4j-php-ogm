@@ -39,7 +39,9 @@ class ComplexQueryResultTest extends IntegrationTestCase
 
     public function testQueryReturningMapCollectionMixed()
     {
-        $q = $this->em->createQuery('MATCH (n:Person)-[r:ACTED_IN]->(m) 
+        $this->clearDb();
+        $this->playMovies();
+        $q = $this->em->createQuery('MATCH (n:Person {name:"Tom Hanks"})-[r:ACTED_IN]->(m) 
         WITH n, {roles: r.roles, movie: m} AS actInfo 
         RETURN n, collect(actInfo) AS actorInfos LIMIT 2');
 
@@ -48,10 +50,10 @@ class ComplexQueryResultTest extends IntegrationTestCase
         $q->addEntityMapping('movie', Movie::class);
 
         $result = $q->getResult();
-        $this->assertCount(2, $result);
+        $this->assertCount(1, $result);
         $this->assertInternalType('array', $result[0]['actorInfos']);
         $this->assertInstanceOf(Movie::class, $result[0]['actorInfos'][0]['movie']);
-        $this->assertCount(1, $result[0]['actorInfos']);
+        $this->assertCount(12, $result[0]['actorInfos']);
     }
 
     public function testQueryReturningCollectionOfEntitiesInMap()

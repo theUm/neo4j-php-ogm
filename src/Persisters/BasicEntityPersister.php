@@ -187,7 +187,9 @@ class BasicEntityPersister
     {
         $relationshipMeta = $this->_classMetadata->getRelationship($alias);
         $relAlias = $relationshipMeta->getAlias();
-        $targetAlias = $this->_em->getClassMetadataFor($relationshipMeta->getTargetEntity())->getEntityAlias();
+        $targetMetadata = $this->_em->getClassMetadataFor($relationshipMeta->getTargetEntity());
+        $targetClassLabel = $targetMetadata->getLabel();
+        $targetAlias = $targetMetadata->getEntityAlias();
         $sourceEntityId = $this->_classMetadata->getIdValue($sourceEntity);
         $relationshipType = $relationshipMeta->getType();
 
@@ -197,7 +199,7 @@ class BasicEntityPersister
         $relPattern = sprintf('%s-[%s:`%s`]-%s', $isIncoming, $relAlias, $relationshipType, $isOutgoing);
 
         $cypher = 'MATCH (n) WHERE id(n) = {id} ';
-        $cypher .= 'MATCH (n)'.$relPattern.'('.$targetAlias.') ';
+        $cypher .= 'MATCH (n)'.$relPattern.'('.$targetAlias.($targetClassLabel != null ? ':' . $targetClassLabel : '').') ';
         $cypher .= 'RETURN '.$targetAlias;
 
         $params = ['id' => (int) $sourceEntityId];
@@ -209,7 +211,8 @@ class BasicEntityPersister
     {
         $relationshipMeta = $this->_classMetadata->getRelationship($alias);
         $relAlias = $relationshipMeta->getAlias();
-        $targetAlias = $this->_em->getClassMetadataFor($relationshipMeta->getRelationshipEntityClass())->getEntityAlias();
+        $targetMetadata = $this->_em->getClassMetadataFor($relationshipMeta->getRelationshipEntityClass());
+        $targetAlias = $targetMetadata->getEntityAlias();
         $sourceEntityId = $this->_classMetadata->getIdValue($sourceEntity);
         $relationshipType = $relationshipMeta->getType();
 
@@ -233,7 +236,9 @@ class BasicEntityPersister
     {
         $relationshipMeta = $this->_classMetadata->getRelationship($alias);
         $relAlias = $relationshipMeta->getAlias();
-        $targetAlias = $this->_em->getClassMetadataFor($relationshipMeta->getTargetEntity())->getEntityAlias();
+        $targetMetadata = $this->_em->getClassMetadataFor($relationshipMeta->getTargetEntity());
+        $targetClassLabel = $targetMetadata->getLabel();
+        $targetAlias = $targetMetadata->getEntityAlias();
         $sourceEntityId = $this->_classMetadata->getIdValue($sourceEntity);
         $relationshipType = $relationshipMeta->getType();
 
@@ -243,7 +248,7 @@ class BasicEntityPersister
         $relPattern = sprintf('%s-[%s:`%s`]-%s', $isIncoming, $relAlias, $relationshipType, $isOutgoing);
 
         $cypher = 'MATCH (n) WHERE id(n) = {id} ';
-        $cypher .= 'MATCH (n)'.$relPattern.'('.$targetAlias.') ';
+        $cypher .= 'MATCH (n)'.$relPattern.'('.$targetAlias.($targetClassLabel != null ? ':' . $targetClassLabel : '').') ';
         $cypher .= 'RETURN '.$targetAlias.' AS '.$targetAlias.' ';
 
         if ($relationshipMeta->hasOrderBy()) {
@@ -269,6 +274,13 @@ class BasicEntityPersister
     {
         $relationshipMeta = $this->_classMetadata->getRelationship($alias);
         $relAlias = $relationshipMeta->getAlias();
+        $targetClassLabel = '';
+        if ($relationshipMeta->isRelationshipEntity() === false && $relationshipMeta->isTargetEntity() === true) {
+            $targetMetadata = $this->_em->getClassMetadataFor($relationshipMeta->getTargetEntity());
+            if ($targetMetadata->getLabel() != null) {
+                $targetClassLabel = ':'.$targetMetadata->getLabel();
+            }
+        }
         $sourceEntityId = $this->_classMetadata->getIdValue($sourceEntity);
         $relationshipType = $relationshipMeta->getType();
 
@@ -278,7 +290,7 @@ class BasicEntityPersister
         $relPattern = sprintf('%s-[:`%s`]-%s', $isIncoming, $relationshipType, $isOutgoing);
 
         $cypher  = 'MATCH (n) WHERE id(n) = {id} ';
-        $cypher .= 'RETURN size((n)'.$relPattern.'()) ';
+        $cypher .= 'RETURN size((n)'.$relPattern.'('.$targetClassLabel.')) ';
         $cypher .= 'AS '.$alias;
 
         return Statement::create($cypher, ['id' => $sourceEntityId]);
